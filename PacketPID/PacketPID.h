@@ -19,5 +19,6 @@ struct so_procinfo {
 };
 
 
+#define IFACE_BUFFER_SIZE 16
 
 #endif /* PacketPID_h */
