@@ -55,28 +55,6 @@ find_segment_64(struct mach_header_64 *mh, const char *segname)
     return foundseg;
 }
 
-struct section_64 *
-find_section_64(struct segment_command_64 *seg, const char *name)
-{
-    struct section_64 *sect, *foundsect = NULL;
-    u_int i = 0;
-    
-    /* First section begins straight after the segment header */
-    for (i = 0, sect = (struct section_64 *)((uint64_t)seg + (uint64_t)sizeof(struct segment_command_64));
-         i < seg->nsects;
-         i++, sect = (struct section_64 *)((uint64_t)sect + sizeof(struct section_64)))
-    {
-        /* Check section name */
-        if (strcmp(sect->sectname, name) == 0) {
-            foundsect = sect;
-            break;
-        }
-    }
-    
-    /* Return the section (NULL if we didn't find it) */
-    return foundsect;
-}
-
 struct load_command *
 find_load_command(struct mach_header_64 *mh, uint32_t cmd)
 {
@@ -98,49 +76,55 @@ find_load_command(struct mach_header_64 *mh, uint32_t cmd)
     return foundlc;
 }
 
-void *
-find_symbol(struct mach_header_64 *mh, const char *name)
+// static struct segment_command_64 *mlc = NULL;
+static struct symtab_command *msymtab = NULL;
+static struct segment_command_64 *mlinkedit = NULL;
+
+int
+find_symbol(struct mach_header_64 *mh, char *names[], void *sym_addrs[])
 {
-    struct symtab_command *msymtab = NULL;
-    struct segment_command_64 *mlc = NULL;
-    struct segment_command_64 *mlinkedit = NULL;
-    void *mstrtab = NULL;
-    
-    struct nlist_64 *nl = NULL;
     char *str;
     uint64_t i;
-    void *addr = NULL;
+    void *mstrtab = NULL;
+    struct nlist_64 *nl = NULL;
     
     /*
      * Check header
      */
     if (mh->magic != MH_MAGIC_64) {
         DLOG("FAIL: magic number doesn't match - 0x%x\n", mh->magic);
-        return NULL;
+        return 0;
     }
     
     /*
      * Find TEXT section
+     * this is not needed, comment out (huangyan13@baidu.com)
      */
-    mlc = find_segment_64(mh, SEG_TEXT);
-    if (!mlc) {
-        DLOG("FAIL: couldn't find __TEXT\n");
-        return NULL;
-    }
+//    if (mlc == NULL) {
+//        mlc = find_segment_64(mh, SEG_TEXT);
+//        if (!mlc) {
+//            DLOG("FAIL: couldn't find __TEXT\n");
+//            return NULL;
+//        }
+//    }
     
     /*
      * Find the LINKEDIT and SYMTAB sections
      */
-    mlinkedit = find_segment_64(mh, SEG_LINKEDIT);
-    if (!mlinkedit) {
-        DLOG("FAIL: couldn't find __LINKEDIT\n");
-        return NULL;
+    if (mlinkedit == NULL) {
+        mlinkedit = find_segment_64(mh, SEG_LINKEDIT);
+        if (!mlinkedit) {
+            DLOG("FAIL: couldn't find __LINKEDIT\n");
+            return 0;
+        }
     }
     
-    msymtab = (struct symtab_command *)find_load_command(mh, LC_SYMTAB);
-    if (!msymtab) {
-        DLOG("FAIL: couldn't find SYMTAB\n");
-        return NULL;
+    if (msymtab == NULL) {
+        msymtab = (struct symtab_command *)find_load_command(mh, LC_SYMTAB);
+        if (!msymtab) {
+            DLOG("FAIL: couldn't find SYMTAB\n");
+            return 0;
+        }
     }
     
     /*
@@ -150,23 +134,27 @@ find_symbol(struct mach_header_64 *mh, const char *name)
      */
     mstrtab = (void *)((int64_t)mlinkedit->vmaddr + (msymtab->stroff - mlinkedit->fileoff));
     
+    int num_found = 0;
+    
     // First nlist_64 struct is NOW located @:
     for (i = 0, nl = (struct nlist_64 *)(mlinkedit->vmaddr + (msymtab->symoff - mlinkedit->fileoff));
          i < msymtab->nsyms;
          i++, nl = (struct nlist_64 *)((uint64_t)nl + sizeof(struct nlist_64)))
     {
         str = (char *)mstrtab + nl->n_un.n_strx;
-        
-        if (strcmp(str, name) == 0) {
-            addr = (void *)nl->n_value;
+        for (int k = 0; names[k]; k++) {
+            if (strcmp(str, names[k]) == 0) if (NULL == sym_addrs[k]) {
+                num_found++;
+                sym_addrs[k] = (void *)nl->n_value;
+            }
         }
     }
     
-    /* Return the address (NULL if we didn't find it) */
-    return addr;
+    /* Return the address (0 if we didn't find it) */
+    return num_found;
 }
 
-uint64_t find_kernel_baseaddr( )
+uint64_t find_kernel_baseaddr()
 {
     uint8_t idtr[ 10 ];
     uint64_t idt = 0;

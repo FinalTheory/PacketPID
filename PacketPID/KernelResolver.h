@@ -42,9 +42,8 @@ struct nlist_64 {
 kern_return_t PacketPID_start(kmod_info_t * ki, void *d);
 kern_return_t PacketPID_stop(kmod_info_t *ki, void *d);
 struct segment_command_64 *find_segment_64(struct mach_header_64 *mh, const char *segname);
-struct section_64 *find_section_64(struct segment_command_64 *seg, const char *name);
 struct load_command *find_load_command(struct mach_header_64 *mh, uint32_t cmd);
-void *find_symbol(struct mach_header_64 *mh, const char *name);
+int find_symbol(struct mach_header_64 *mh, char *names[], void *sym_addrs[]);
 uint64_t find_kernel_baseaddr( void );
 
 extern uint64_t KERNEL_MH_START_ADDR;

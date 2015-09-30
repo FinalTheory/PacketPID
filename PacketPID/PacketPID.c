@@ -5,37 +5,45 @@
 //  Copyright © 2015年 Baidu Inc. All rights reserved.
 //
 
-#include <mach/mach_types.h>
 #include <sys/systm.h>
 #include "KernelResolver.h"
 
+static char *sym_names[] = {
+    "_tcbinfo",
+    "_udbinfo",
+    "_in_pcblookup_hash",
+    "_inp_get_soprocinfo",
+    "_inp_findinpcb_procinfo",
+    NULL
+};
+
+const size_t sym_num = sizeof(sym_names) / sizeof(char *) - 1;
+
+static void *sym_addrs[sym_num] = {NULL,};
+
+
 kern_return_t PacketPID_start(kmod_info_t * ki, void *d)
 {
+    // find kernel base address
     if( find_kernel_baseaddr() != 0 )
     {
         DLOG( "[+] Can't find KERNEL_MH_START_ADDR!\n" );
         return KERN_FAILURE;
     }
     
-    void *mkmod;
+    // found all needed symbols
+    int num_found = find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR, sym_names, sym_addrs);
+    for (int i = 0; sym_names[i]; i++) {
+        DLOG("[+] Symbol %s @ %p\n", sym_names[i], sym_addrs[i]);
+    }
     
-    DLOG("[+] _allproc @ %p\n",
-         find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR,
-                     "_allproc"));
-    DLOG("[+] _proc_lock @ %p\n",
-         find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR,
-                     "_proc_lock"));
-    DLOG("[+] _kauth_cred_setuidgid @ %p\n",
-         find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR,
-                     "_kauth_cred_setuidgid"));
-    DLOG("[+] __ZN6OSKext13loadFromMkextEjPcjPS0_Pj @ %p\n",
-         find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR,
-                     "__ZN6OSKext13loadFromMkextEjPcjPS0_Pj"));
-    DLOG("[+] _nsysent @ %p\n",
-         find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR,
-                     "_nsysent"));
-    mkmod = find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR, "_kmod");
-    DLOG("[+] _kmod from mem. @ %p\n", mkmod );
+    // check if all symbols are found
+    DLOG("[+] Symbols found: %d\n", num_found);
+    if (num_found != sym_num) {
+        DLOG("There are unknown symbols, exit.\n");
+        return KERN_FAILURE;
+    }
+    
     return KERN_SUCCESS;
 }
 
