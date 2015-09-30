@@ -8,12 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		E1B35BF01BBBAE3F00B025F9 /* PacketPID.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */; };
+		E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		E1B35BEC1BBBAE3F00B025F9 /* PacketPID.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PacketPID.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PacketPID.c; sourceTree = "<group>"; };
 		E1B35BF11BBBAE3F00B025F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = KernelResolver.c; sourceTree = "<group>"; };
+		E1B35BF91BBBB11200B025F9 /* KernelResolver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KernelResolver.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,8 +49,10 @@
 		E1B35BEE1BBBAE3F00B025F9 /* PacketPID */ = {
 			isa = PBXGroup;
 			children = (
+				E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */,
 				E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */,
 				E1B35BF11BBBAE3F00B025F9 /* Info.plist */,
+				E1B35BF91BBBB11200B025F9 /* KernelResolver.h */,
 			);
 			path = PacketPID;
 			sourceTree = "<group>";
@@ -130,6 +135,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */,
 				E1B35BF01BBBAE3F00B025F9 /* PacketPID.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
