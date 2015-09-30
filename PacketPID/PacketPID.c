@@ -27,7 +27,7 @@
 
 #ifdef DEBUG
 #define DLOG(args...)   printf(args)
-#elif
+#else
 #define DLOG(args...)   /* */
 #endif
 
@@ -54,18 +54,17 @@ struct nlist_64 {
 };
 
 
-kern_return_t KernelResolver_start(kmod_info_t * ki, void *d);
-kern_return_t KernelResolver_stop(kmod_info_t *ki, void *d);
+kern_return_t PacketPID_start(kmod_info_t * ki, void *d);
+kern_return_t PacketPID_stop(kmod_info_t *ki, void *d);
 struct segment_command_64 *find_segment_64(struct mach_header_64 *mh, const char *segname);
 struct section_64 *find_section_64(struct segment_command_64 *seg, const char *name);
 struct load_command *find_load_command(struct mach_header_64 *mh, uint32_t cmd);
 void *find_symbol(struct mach_header_64 *mh, const char *name);
-void *find_symbol_from_disk( vm_address_t slide, const char *name );
 uint64_t find_kernel_baseaddr( void );
 
 uint64_t KERNEL_MH_START_ADDR;
 
-kern_return_t KernelResolver_start(kmod_info_t * ki, void *d)
+kern_return_t PacketPID_start(kmod_info_t * ki, void *d)
 {
     if( find_kernel_baseaddr() != 0 )
     {
@@ -73,7 +72,7 @@ kern_return_t KernelResolver_start(kmod_info_t * ki, void *d)
         return KERN_FAILURE;
     }
     
-    void *fkmod, *mkmod;
+    void *mkmod;
     
     DLOG("[+] _allproc @ %p\n",
          find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR,
@@ -92,14 +91,10 @@ kern_return_t KernelResolver_start(kmod_info_t * ki, void *d)
                      "_nsysent"));
     mkmod = find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR, "_kmod");
     DLOG("[+] _kmod from mem. @ %p\n", mkmod );
-    fkmod = find_symbol_from_disk( 0,  "_kmod" );
-    DLOG( "[+] _kmod from file @ %p\n", fkmod );
-    DLOG( "[+] KASLR slide: %016lx\n", mkmod - fkmod );
-    
     return KERN_SUCCESS;
 }
 
-kern_return_t KernelResolver_stop(kmod_info_t *ki, void *d)
+kern_return_t PacketPID_stop(kmod_info_t *ki, void *d)
 {
     return KERN_SUCCESS;
 }
@@ -218,15 +213,6 @@ find_symbol(struct mach_header_64 *mh, const char *name)
         return NULL;
     }
     
-    //DLOG( "[+] __TEXT.vmaddr      0x%016llX\n", mlc->vmaddr );
-    //DLOG( "[+] __LINKEDIT.vmaddr  0x%016llX\n", mlinkedit->vmaddr );
-    //DLOG( "[+] __LINKEDIT.vmsize  0x%08llX\n", mlinkedit->vmsize );
-    //DLOG( "[+] __LINKEDIT.fileoff 0x%08llX\n", mlinkedit->fileoff );
-    //DLOG( "[+] LC_SYMTAB.stroff   0x%08X\n", msymtab->stroff );
-    //DLOG( "[+] LC_SYMTAB.strsize  0x%08X\n", msymtab->strsize );
-    //DLOG( "[+] LC_SYMTAB.symoff   0x%08X\n", msymtab->symoff );
-    //DLOG( "[+] LC_SYMTAB.nsyms    0x%08X\n", msymtab->nsyms );
-    
     /*
      * Enumerate symbols until we find the one we're after
      *
@@ -248,154 +234,6 @@ find_symbol(struct mach_header_64 *mh, const char *name)
     
     /* Return the address (NULL if we didn't find it) */
     return addr;
-}
-
-void *
-find_symbol_from_disk( vm_offset_t slide, const char *name )
-{
-    struct symtab_command *fsymtab = NULL;
-    struct segment_command_64 *flc = NULL;
-    struct segment_command_64 *flinkedit = NULL;
-    void *fstrtab = NULL;
-    
-    struct nlist_64 *nl = NULL;
-    char *str;
-    uint64_t i;
-    void *addr = NULL;
-    
-#define MY_BSIZE    1024*1000   // ~1 MByte
-    
-    vnode_t kernel_node = NULL;
-    vfs_context_t ctx = NULL;
-    
-    int error;
-    
-    // Buffer creation
-    char header_buffer[ PAGE_SIZE_64 ];
-    uio_t uio = NULL;
-    
-    uio = uio_create( 1, 0, UIO_SYSSPACE, UIO_READ );
-    
-    if( ( error = uio_addiov( uio, CAST_USER_ADDR_T( header_buffer ), PAGE_SIZE_64 ) ) )
-    {
-        DLOG( "[+] FAIL: uio_addiov\n" );
-        return NULL;
-    }
-    
-    // VFS access
-    if( ( error = vnode_lookup( "/mach_kernel", 0, &kernel_node, NULL ) ) != 0 )
-    {
-        DLOG( "[+] FAIL: vnode_lookup\n" );
-        return NULL;
-    }
-    
-    ctx = vfs_context_current();
-    
-    if( ( error = vnode_open( "/mach_kernel", O_RDONLY, 0, 0, &kernel_node, ctx ) ) )
-    {
-        DLOG( "[+] FAIL: vnode_open\n" );
-        return NULL;
-    }
-    
-    if( ( error = VNOP_READ( kernel_node, uio, 0, ctx) ) )
-    {
-        DLOG( "[+] FAIL: VNOP_READ\n" );
-        return NULL;
-    }
-    
-    struct mach_header_64 *mmh = (struct mach_header_64 *)((void *)header_buffer);
-    
-    /*
-     *  Check header
-     */
-    if( mmh->magic != MH_MAGIC_64 ) {
-        DLOG("FAIL: magic number doesn't match - 0x%x\n", mmh->magic);
-        return NULL;
-    }
-    
-    flc = find_segment_64(mmh, SEG_TEXT);
-    if (!flc) {
-        DLOG("FAIL: couldn't find __TEXT\n");
-        return NULL;
-    }
-    
-    flinkedit = find_segment_64(mmh, SEG_LINKEDIT);
-    if (!flinkedit) {
-        DLOG("FAIL: couldn't find __LINKEDIT\n");
-        return NULL;
-    }
-    
-    fsymtab = (struct symtab_command *)find_load_command(mmh, LC_SYMTAB);
-    if (!fsymtab) {
-        DLOG("FAIL: couldn't find SYMTAB\n");
-        return NULL;
-    }
-    
-    //    DLOG( "[+] f:__TEXT.vmaddr      0x%016llX\n", flc->vmaddr );
-    //    DLOG( "[+] f:__LINKEDIT.vmaddr  0x%016llX\n", flinkedit->vmaddr );
-    //    DLOG( "[+] f:__LINKEDIT.vmsize  0x%08llX\n", flinkedit->vmsize );
-    //    DLOG( "[+] f:__LINKEDIT.fileoff 0x%08llX\n", flinkedit->fileoff );
-    //    DLOG( "[+] f:LC_SYMTAB.stroff   0x%08X\n", fsymtab->stroff );
-    //    DLOG( "[+] f:LC_SYMTAB.strsize  0x%08X\n", fsymtab->strsize );
-    //    DLOG( "[+] f:LC_SYMTAB.symoff   0x%08X\n", fsymtab->symoff );
-    //    DLOG( "[+] f:LC_SYMTAB.nsyms    0x%08X\n", fsymtab->nsyms );
-    
-    // !!!
-    // uio free()
-    uio_free( uio );
-    
-    // read LINKEDIT section from file
-    void *sec_buffer = _MALLOC( MY_BSIZE, M_TEMP, (M_ZERO|M_WAITOK) );
-    
-    if( sec_buffer == NULL )
-    {
-        DLOG( "[+] _MALLOC failed!\n" );
-        return NULL;
-    }
-    
-    uio_t uio2 = NULL;
-    off_t off = flinkedit->fileoff;
-    
-    uio2 = uio_create( 1, off, UIO_SYSSPACE, UIO_READ );
-    
-    if( ( error = uio_addiov( uio2, CAST_USER_ADDR_T( sec_buffer ), MY_BSIZE ) ) )
-    {
-        DLOG( "[+] FAIL: uio_addiov\n" );
-        return NULL;
-    }
-    
-    if( ( error = VNOP_READ( kernel_node, uio2, 0, ctx) ) )
-    {
-        DLOG( "[+] FAIL: VNOP_READ (%d)\n", error );
-        return NULL;
-    }
-    
-    /*
-     * Enumerate symbols until we find the one we're after
-     */
-    fstrtab = (void *)((int64_t)sec_buffer + (fsymtab->stroff - flinkedit->fileoff));
-    
-    for (i = 0, nl = (struct nlist_64 *)(sec_buffer + (fsymtab->symoff - flinkedit->fileoff));
-         i < fsymtab->nsyms;
-         i++, nl = (struct nlist_64 *)((uint64_t)nl + sizeof(struct nlist_64)))
-    {
-        str = (char *)fstrtab + nl->n_un.n_strx;
-        
-        if (strcmp(str, name) == 0) {
-            addr = (void *)nl->n_value;
-        }
-    }
-    
-    _FREE( sec_buffer, M_TEMP );
-    uio_free( uio2 );
-    
-    vnode_close( kernel_node, FREAD, ctx );
-    
-    /* Return the address (NULL if we didn't find it) */
-    if( addr == NULL )
-        return NULL;
-    else
-        return (addr + slide);
 }
 
 uint64_t find_kernel_baseaddr( )
