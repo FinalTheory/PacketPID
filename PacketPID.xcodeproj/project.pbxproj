@@ -17,6 +17,7 @@
 		E1B35BF11BBBAE3F00B025F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = KernelResolver.c; sourceTree = "<group>"; };
 		E1B35BF91BBBB11200B025F9 /* KernelResolver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KernelResolver.h; sourceTree = "<group>"; };
+		E1B35BFA1BBBC88300B025F9 /* PacketPID.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PacketPID.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +54,7 @@
 				E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */,
 				E1B35BF11BBBAE3F00B025F9 /* Info.plist */,
 				E1B35BF91BBBB11200B025F9 /* KernelResolver.h */,
+				E1B35BFA1BBBC88300B025F9 /* PacketPID.h */,
 			);
 			path = PacketPID;
 			sourceTree = "<group>";
@@ -223,8 +225,10 @@
 		E1B35BF51BBBAE3F00B025F9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = PacketPID/Info.plist;
 				MODULE_NAME = baidu.PacketPID;
 				MODULE_START = PacketPID_start;
@@ -241,8 +245,10 @@
 		E1B35BF61BBBAE3F00B025F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = PacketPID/Info.plist;
 				MODULE_NAME = baidu.PacketPID;
 				MODULE_START = PacketPID_start;

@@ -7,7 +7,7 @@
  *
  * Used by PacketPID kernel extension
  * Created by huangyan13@baidu.com on 15/9/30.
- * Copyright © 2015年 Baidu Inc. All rights reserved.
+ * Copyright © 2015 Baidu Inc. All rights reserved.
  *
  * This is a simple example of how to resolve symbols in the kernel from within
  * a kernel extension. Symbols can be solved by using the kernel image from disk
@@ -81,7 +81,7 @@ static struct symtab_command *msymtab = NULL;
 static struct segment_command_64 *mlinkedit = NULL;
 
 int
-find_symbol(struct mach_header_64 *mh, char *names[], void *sym_addrs[])
+find_symbol(struct mach_header_64 *mh, char *names[], void **sym_addrs[])
 {
     char *str;
     uint64_t i;
@@ -143,9 +143,9 @@ find_symbol(struct mach_header_64 *mh, char *names[], void *sym_addrs[])
     {
         str = (char *)mstrtab + nl->n_un.n_strx;
         for (int k = 0; names[k]; k++) {
-            if (strcmp(str, names[k]) == 0) if (NULL == sym_addrs[k]) {
+            if (strcmp(str, names[k]) == 0) if (NULL == *(sym_addrs[k])) {
                 num_found++;
-                sym_addrs[k] = (void *)nl->n_value;
+                *(sym_addrs[k]) = (void *)nl->n_value;
             }
         }
     }
