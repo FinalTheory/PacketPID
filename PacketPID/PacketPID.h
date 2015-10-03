@@ -8,17 +8,6 @@
 #ifndef PacketPID_h
 #define PacketPID_h
 
-/*
- * Socket process information
- */
-struct so_procinfo {
-    pid_t		spi_pid;
-    pid_t		spi_epid;
-    uuid_t		spi_uuid;
-    uuid_t		spi_euuid;
-};
-
-
 #define IFACE_BUFFER_SIZE 16
 
 

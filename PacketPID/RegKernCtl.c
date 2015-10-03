@@ -1,9 +1,8 @@
 //
-//  RegKernCtl.c
-//  PacketPID
+//  PacketPID kernel extension
 //
-//  Created by baidu on 15/10/3.
-//  Copyright © 2015年 baidu. All rights reserved.
+//  Created by huangyan13@baidu.com on 15/9/30.
+//  Copyright © 2015 Baidu Inc. All rights reserved.
 //
 
 #include <sys/systm.h>
@@ -12,39 +11,45 @@
 
 static const char ctl_name[] = "org.baidu.PacketPID";
 
-errno_t kern_ctl_connect_func(kern_ctl_ref kctlref,
-                              struct sockaddr_ctl *sac,
-                              void **unitinfo) {
+static errno_t
+kern_ctl_connect_func(kern_ctl_ref kctlref,
+                      struct sockaddr_ctl *sac,
+                      void **unitinfo) {
     // do nothing
     return 0;
 }
 
-errno_t kern_ctl_disconnect_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo) {
+static errno_t
+kern_ctl_disconnect_func(kern_ctl_ref kctlref,
+                         u_int32_t unit, void *unitinfo) {
     // do nothing
     return 0;
 }
 
-errno_t kern_ctl_send_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo,
-                           mbuf_t m, int flags) {
+static errno_t
+kern_ctl_send_func(kern_ctl_ref kctlref, u_int32_t unit,
+                   void *unitinfo, mbuf_t m, int flags) {
     return 0;
 }
 
 
-errno_t kern_ctl_setopt_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo,
-                             int opt, void *data, size_t len) {
+static errno_t
+kern_ctl_setopt_func(kern_ctl_ref kctlref, u_int32_t unit,
+                     void *unitinfo, int opt, void *data, size_t len) {
     return 0;
 }
 
-errno_t kern_ctl_getopt_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo,
-                             int opt, void *data, size_t *len) {
-    return 0;
-}
+static kern_ctl_ref kctlref = NULL;
 
-int RegKernelControl() {
+errno_t RegKernelControl(ctl_getopt_func kern_ctl_getopt_func) {
+    if (kctlref != NULL) {
+        return 0;
+    }
+    
     errno_t error;
     // Initialize control
     struct kern_ctl_reg ep_ctl;
-    kern_ctl_ref kctlref;
+    
     bzero(&ep_ctl, sizeof(ep_ctl));
     // this ID would be dynamically assigned
     ep_ctl.ctl_id = 0;
@@ -64,7 +69,16 @@ int RegKernelControl() {
     // register kernel control
     error = ctl_register(&ep_ctl, &kctlref);
     if (error != 0) {
+        // reset the kernel control ref to NULL
+        kctlref = NULL;
+    }
+    return error;
+}
+
+errno_t CleanKernelControl() {
+    if (kctlref != NULL) {
+        return ctl_deregister(kctlref);
+    } else {
         return -1;
     }
-    return 0;
 }

@@ -92,7 +92,7 @@ find_symbol(struct mach_header_64 *mh, char *names[], void **sym_addrs[])
      * Check header
      */
     if (mh->magic != MH_MAGIC_64) {
-        DLOG("FAIL: magic number doesn't match - 0x%x\n", mh->magic);
+        DLOG("\tMagic number doesn't match - 0x%x\n", mh->magic);
         return 0;
     }
     
@@ -114,7 +114,7 @@ find_symbol(struct mach_header_64 *mh, char *names[], void **sym_addrs[])
     if (mlinkedit == NULL) {
         mlinkedit = find_segment_64(mh, SEG_LINKEDIT);
         if (!mlinkedit) {
-            DLOG("FAIL: couldn't find __LINKEDIT\n");
+            DLOG("\tCouldn't find __LINKEDIT\n");
             return 0;
         }
     }
@@ -122,7 +122,7 @@ find_symbol(struct mach_header_64 *mh, char *names[], void **sym_addrs[])
     if (msymtab == NULL) {
         msymtab = (struct symtab_command *)find_load_command(mh, LC_SYMTAB);
         if (!msymtab) {
-            DLOG("FAIL: couldn't find SYMTAB\n");
+            DLOG("\tCouldn't find SYMTAB\n");
             return 0;
         }
     }

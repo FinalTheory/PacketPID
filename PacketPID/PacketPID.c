@@ -17,6 +17,8 @@
 #include <netinet/tcp.h>
 #include <netinet/tcp_var.h>
 #include <sys/errno.h>
+#include <sys/kern_control.h>
+
 #include "KernelResolver.h"
 #include "RegKernCtl.h"
 #include "PacketPID.h"
@@ -24,6 +26,8 @@
 struct inpcbinfo *tcbinfo_p;
 
 struct inpcbinfo *udbinfo_p;
+
+struct inpcbinfo *ripcbinfo_p;
 
 struct ifnet * (*ifunit)(const char *name);
 
@@ -42,6 +46,7 @@ errno_t (*ifnet_flowid)(struct ifnet *ifp, uint32_t *flowid);
 static char *sym_names[] = {
     "_tcbinfo",
     "_udbinfo",
+    "_ripcbinfo",
     "_ifunit",
     "_in_pcblookup_hash",
     "_inp_get_soprocinfo",
@@ -55,6 +60,7 @@ const size_t sym_num = sizeof(sym_names) / sizeof(char *) - 1;
 static void **sym_addrs[sym_num] = {
     (void **)&tcbinfo_p,
     (void **)&udbinfo_p,
+    (void **)&ripcbinfo_p,
     (void **)&ifunit,
     (void **)&in_pcblookup_hash,
     (void **)&inp_get_soprocinfo,
@@ -67,19 +73,19 @@ static int InitFunctions() {
     // find kernel base address
     if(find_kernel_baseaddr() != 0)
     {
-        DLOG( "[+] Can't find KERNEL_MH_START_ADDR!\n" );
+        DLOG( "[FATAL] Can't find KERNEL_MH_START_ADDR!\n" );
         return -1;
     }
     // found all needed symbols
     int num_found = find_symbol((struct mach_header_64 *)KERNEL_MH_START_ADDR, sym_names, sym_addrs);
     for (int i = 0; sym_names[i]; i++) {
-        DLOG("[+] Symbol %s @ %p\n", sym_names[i], *(sym_addrs[i]));
+        DLOG("[INFO] Symbol %s @ %p\n", sym_names[i], *(sym_addrs[i]));
     }
     
     // check if all symbols are found
-    DLOG("[+] Symbols found: %d\n", num_found);
+    DLOG("[INFO] Symbols found: %d\n", num_found);
     if (num_found != sym_num) {
-        DLOG("There are unknown symbols, exit.\n");
+        DLOG("[ERROR] There are unknown symbols, exit.\n");
         return -1;
     }
     
@@ -122,37 +128,113 @@ static int LoadInterfaces() {
     // finally extract flowhash of each interface
     for (int i = 0; ifaces[i]; i++) {
         ifnet_flowid((struct ifnet *)ifaces[i], &iface_flowhash[i]);
-        DLOG("Listen on iface %s%d: type %d, flowID %u @ %p\n",
+        DLOG("[INFO] Listen on iface %s%d: type %d, flowID %u @ %p\n",
              ifnet_name(ifaces[i]),
              ifnet_unit(ifaces[i]),
              ifnet_type(ifaces[i]),
              iface_flowhash[i], ifaces[i]);
     }
 
-    DLOG("[+] Network interfaces count: %u\n", count);
+    DLOG("[INFO] Network interfaces count: %u\n", count);
     return 0;
 }
 
-
+static errno_t
+kern_ctl_getopt_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo,
+                     int opt, void *data, size_t *len) {
+    qry_data_t data_ptr = (qry_data_t)data;
+    
+    int found = 0;
+    struct ifnet *ifp = NULL;
+    struct inpcb *inp = NULL;
+    struct inpcbinfo *pcbinfo = NULL;
+    struct in_addr faddr, laddr;
+    u_short fport, lport;
+    int wildcard = 0;
+    
+    faddr.s_addr = data_ptr->saddr;
+    laddr.s_addr = data_ptr->daddr;
+    fport = data_ptr->source;
+    lport = data_ptr->dest;
+    
+    if (data_ptr->proto == IPPROTO_TCP) {
+        pcbinfo = tcbinfo_p;
+    } else if (data_ptr->proto == IPPROTO_UDP) {
+        pcbinfo = udbinfo_p;
+        wildcard = 1;
+    }
+    
+    if (pcbinfo != NULL) {
+        if (data_ptr->outgoing) {
+            // search outbound list
+//            if (data_ptr->proto == IPPROTO_TCP)
+//                found = inp_findinpcb_procinfo(tcbinfo_p, hdr->pth_flowid,
+//                                               &data_ptr->proc);
+//            else if (data_ptr->proto == IPPROTO_UDP)
+//                found = inp_findinpcb_procinfo(udbinfo_p, hdr->pth_flowid,
+//                                               &data_ptr->proc);
+//            else
+//                found = inp_findinpcb_procinfo(ripcbinfo_p, hdr->pth_flowid,
+//                                               &data_ptr->proc);
+        } else {
+            // search inbound hash table
+            ifp = ifunit(data_ptr->iface);
+            if (ifp != NULL) {
+                // if we can find the inbound interface
+                // then just search the hash table
+                inp = in_pcblookup_hash(pcbinfo, faddr, fport,
+                                        laddr, lport, wildcard, ifp);
+            } else {
+                // search all avaliable interfaces
+                for (int i = 0; ifaces[i]; i++) {
+                    ifp = (struct ifnet *)ifaces[i];
+                    inp = in_pcblookup_hash(pcbinfo, faddr, fport,
+                                            laddr, lport, wildcard, ifp);
+                    if (inp != NULL) break;
+                }
+            }
+            // if we found correct in_pcb block
+            // just extract all data
+            if (inp != NULL) {
+                found = 1;
+                // seems all right without guard here
+                // but may leads to a kernel crash
+                // if (inp->inp_state != INPCB_STATE_DEAD &&
+                //     inp->inp_socket != NULL) {
+                // }
+                inp_get_soprocinfo(inp, &data_ptr->proc);
+            }
+        }
+    } else {
+        DLOG("[WARNING] Unsupported protocol.\n");
+    }
+    if (!found) {
+        // if process info is not found, clear the result
+        memset(&data_ptr->proc, 0, sizeof(data_ptr->proc));
+    }
+    
+    return 0;
+}
 
 kern_return_t PacketPID_start(kmod_info_t * ki, void *d)
 {
+    int ret_val;
     // Load kernel functions
     if(InitFunctions() != 0)
     {
-        DLOG( "[+] Kernel functions load error.\n" );
+        DLOG("[FATAL] Kernel functions load error.\n");
         return KERN_FAILURE;
     }
     
     // Find pointers of network interfaces
     if (LoadInterfaces() != 0) {
-        DLOG( "[+] Network interfaces load error.\n" );
+        DLOG("[FATAL] Network interfaces load error.\n");
         return KERN_FAILURE;
     }
     
     // register kernel control structure
-    if (RegKernelControl() != 0) {
-        DLOG( "[+] Kernel control register error.\n" );
+    if ((ret_val = RegKernelControl(kern_ctl_getopt_func)) != 0) {
+        DLOG("[FATAL] Kernel control register error: %d.\n", ret_val);
         return KERN_FAILURE;
     }
     
@@ -161,5 +243,9 @@ kern_return_t PacketPID_start(kmod_info_t * ki, void *d)
 
 kern_return_t PacketPID_stop(kmod_info_t *ki, void *d)
 {
+    // unregister the kernel control function
+    if (CleanKernelControl() != 0) {
+        return KERN_FAILURE;
+    }
     return KERN_SUCCESS;
 }
