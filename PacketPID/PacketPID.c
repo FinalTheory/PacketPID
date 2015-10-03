@@ -18,6 +18,7 @@
 #include <netinet/tcp_var.h>
 #include <sys/errno.h>
 #include "KernelResolver.h"
+#include "RegKernCtl.h"
 #include "PacketPID.h"
 
 struct inpcbinfo *tcbinfo_p;
@@ -87,12 +88,15 @@ static int InitFunctions() {
 
 static ifnet_t ifaces[IFACE_BUFFER_SIZE] = {NULL,};
 
+static uint32_t iface_flowhash[IFACE_BUFFER_SIZE] = {0,};
+
 static int LoadInterfaces() {
     ifnet_t *interfaces;
     ifaddr_t *addrs;
-    uint32_t flowid;
     uint32_t count = 0;
     int p = 0;
+    
+    // get list of ifnet structure
     if (ifnet_list_get(IFNET_FAMILY_ANY, &interfaces, &count) != 0) {
         return -1;
     }
@@ -115,19 +119,21 @@ static int LoadInterfaces() {
     interfaces = NULL;
     ifaces[p] = NULL;
     
+    // finally extract flowhash of each interface
     for (int i = 0; ifaces[i]; i++) {
-        flowid = 0;
-        ifnet_flowid((struct ifnet *)ifaces[i], &flowid);
+        ifnet_flowid((struct ifnet *)ifaces[i], &iface_flowhash[i]);
         DLOG("Listen on iface %s%d: type %d, flowID %u @ %p\n",
              ifnet_name(ifaces[i]),
              ifnet_unit(ifaces[i]),
              ifnet_type(ifaces[i]),
-             flowid, ifaces[i]);
+             iface_flowhash[i], ifaces[i]);
     }
 
     DLOG("[+] Network interfaces count: %u\n", count);
     return 0;
 }
+
+
 
 kern_return_t PacketPID_start(kmod_info_t * ki, void *d)
 {
@@ -141,6 +147,12 @@ kern_return_t PacketPID_start(kmod_info_t * ki, void *d)
     // Find pointers of network interfaces
     if (LoadInterfaces() != 0) {
         DLOG( "[+] Network interfaces load error.\n" );
+        return KERN_FAILURE;
+    }
+    
+    // register kernel control structure
+    if (RegKernelControl() != 0) {
+        DLOG( "[+] Kernel control register error.\n" );
         return KERN_FAILURE;
     }
     

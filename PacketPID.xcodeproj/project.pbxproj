@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		E1B35BF01BBBAE3F00B025F9 /* PacketPID.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */; };
 		E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */; settings = {ASSET_TAGS = (); }; };
+		E1F66E171BBFADF400C89606 /* RegKernCtl.c in Sources */ = {isa = PBXBuildFile; fileRef = E1F66E151BBFADF400C89606 /* RegKernCtl.c */; settings = {ASSET_TAGS = (); }; };
+		E1F66E181BBFADF400C89606 /* RegKernCtl.h in Headers */ = {isa = PBXBuildFile; fileRef = E1F66E161BBFADF400C89606 /* RegKernCtl.h */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +20,8 @@
 		E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = KernelResolver.c; sourceTree = "<group>"; };
 		E1B35BF91BBBB11200B025F9 /* KernelResolver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KernelResolver.h; sourceTree = "<group>"; };
 		E1B35BFA1BBBC88300B025F9 /* PacketPID.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PacketPID.h; sourceTree = "<group>"; };
+		E1F66E151BBFADF400C89606 /* RegKernCtl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = RegKernCtl.c; sourceTree = "<group>"; };
+		E1F66E161BBFADF400C89606 /* RegKernCtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RegKernCtl.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +59,8 @@
 				E1B35BF11BBBAE3F00B025F9 /* Info.plist */,
 				E1B35BF91BBBB11200B025F9 /* KernelResolver.h */,
 				E1B35BFA1BBBC88300B025F9 /* PacketPID.h */,
+				E1F66E151BBFADF400C89606 /* RegKernCtl.c */,
+				E1F66E161BBFADF400C89606 /* RegKernCtl.h */,
 			);
 			path = PacketPID;
 			sourceTree = "<group>";
@@ -66,6 +72,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1F66E181BBFADF400C89606 /* RegKernCtl.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +144,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1F66E171BBFADF400C89606 /* RegKernCtl.c in Sources */,
 				E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */,
 				E1B35BF01BBBAE3F00B025F9 /* PacketPID.c in Sources */,
 			);
@@ -238,6 +246,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = baidu.PacketPID;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Debug;
@@ -258,6 +267,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = baidu.PacketPID;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Release;
@@ -281,6 +291,7 @@
 				E1B35BF61BBBAE3F00B025F9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
