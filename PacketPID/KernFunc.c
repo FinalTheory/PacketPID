@@ -204,8 +204,8 @@ kern_ctl_getopt_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo,
     if (pcbinfo != NULL) {
         if (opt & KERN_CTL_OUTBOUND) {
             // search outbound list
-            found = inp_findinpcb_procinfo_by_tuple(pcbinfo, faddr, fport,
-                                                    laddr, lport, &data_ptr->proc);
+            found = inp_findinpcb_procinfo_by_tuple(pcbinfo, laddr, lport,
+                                                    faddr, fport, &data_ptr->proc);
         } else if (opt & KERN_CTL_INBOUND) {
             // search inbound hash table
             ifp = ifunit_p(data_ptr->iface);
