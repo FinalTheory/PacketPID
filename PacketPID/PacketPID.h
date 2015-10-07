@@ -8,8 +8,11 @@
 #ifndef PacketPID_h
 #define PacketPID_h
 
-#define IFACE_BUFFER_SIZE 16
-
+#ifdef DEBUG
+#define DLOG(args...)   printf(args)
+#else
+#define DLOG(args...)   /* */
+#endif
 
 
 #endif /* PacketPID_h */

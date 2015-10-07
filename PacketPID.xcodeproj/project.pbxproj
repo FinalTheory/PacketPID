@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E16ECD961BC5205D0074E05F /* KernFunc.c in Sources */ = {isa = PBXBuildFile; fileRef = E16ECD941BC5205D0074E05F /* KernFunc.c */; settings = {ASSET_TAGS = (); }; };
+		E16ECD971BC5205D0074E05F /* KernFunc.h in Headers */ = {isa = PBXBuildFile; fileRef = E16ECD951BC5205D0074E05F /* KernFunc.h */; settings = {ASSET_TAGS = (); }; };
 		E1B35BF01BBBAE3F00B025F9 /* PacketPID.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */; };
 		E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */; settings = {ASSET_TAGS = (); }; };
 		E1F66E171BBFADF400C89606 /* RegKernCtl.c in Sources */ = {isa = PBXBuildFile; fileRef = E1F66E151BBFADF400C89606 /* RegKernCtl.c */; settings = {ASSET_TAGS = (); }; };
@@ -14,6 +16,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E16ECD941BC5205D0074E05F /* KernFunc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = KernFunc.c; sourceTree = "<group>"; };
+		E16ECD951BC5205D0074E05F /* KernFunc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KernFunc.h; sourceTree = "<group>"; };
 		E1B35BEC1BBBAE3F00B025F9 /* PacketPID.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PacketPID.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PacketPID.c; sourceTree = "<group>"; };
 		E1B35BF11BBBAE3F00B025F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -61,6 +65,8 @@
 				E1B35BFA1BBBC88300B025F9 /* PacketPID.h */,
 				E1F66E151BBFADF400C89606 /* RegKernCtl.c */,
 				E1F66E161BBFADF400C89606 /* RegKernCtl.h */,
+				E16ECD941BC5205D0074E05F /* KernFunc.c */,
+				E16ECD951BC5205D0074E05F /* KernFunc.h */,
 			);
 			path = PacketPID;
 			sourceTree = "<group>";
@@ -72,6 +78,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E16ECD971BC5205D0074E05F /* KernFunc.h in Headers */,
 				E1F66E181BBFADF400C89606 /* RegKernCtl.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -147,6 +154,7 @@
 				E1F66E171BBFADF400C89606 /* RegKernCtl.c in Sources */,
 				E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */,
 				E1B35BF01BBBAE3F00B025F9 /* PacketPID.c in Sources */,
+				E16ECD961BC5205D0074E05F /* KernFunc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,7 +164,7 @@
 		E1B35BF21BBBAE3F00B025F9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -188,17 +196,18 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "PacketPID/bsd PacketPID/osfmk PacketPID/libkern";
 			};
 			name = Debug;
 		};
 		E1B35BF31BBBAE3F00B025F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -224,9 +233,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "PacketPID/bsd PacketPID/osfmk PacketPID/libkern";
 			};
 			name = Release;
 		};
