@@ -20,11 +20,24 @@
  *
  */
 
-#include "KernelResolver.h"
-#include <sys/fcntl.h>
 #include <sys/systm.h>
+#include <sys/fcntl.h>
 #include <sys/types.h>
 #include <sys/vnode.h>
+
+#include "KernelResolver.h"
+#include "PacketPID.h"
+
+/* Borrowed from kernel source. It doesn't exist in Kernel.framework. */
+struct nlist_64 {
+    union {
+        uint32_t  n_strx;   /* index into the string table */
+    } n_un;
+    uint8_t n_type;         /* type flag, see below */
+    uint8_t n_sect;         /* section number or NO_SECT */
+    uint16_t n_desc;        /* see <mach-o/stab.h> */
+    uint64_t n_value;       /* value of this symbol (or stab offset) */
+};
 
 uint64_t KERNEL_MH_START_ADDR;
 

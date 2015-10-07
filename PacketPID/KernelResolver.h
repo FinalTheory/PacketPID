@@ -11,12 +11,6 @@
 #include <mach/mach_types.h>
 #include <mach-o/loader.h>
 
-#ifdef DEBUG
-#define DLOG(args...)   printf(args)
-#else
-#define DLOG(args...)   /* */
-#endif
-
 struct descriptor_idt
 {
     uint16_t offset_low;
@@ -28,16 +22,6 @@ struct descriptor_idt
     uint32_t reserved2;
 };
 
-/* Borrowed from kernel source. It doesn't exist in Kernel.framework. */
-struct nlist_64 {
-    union {
-        uint32_t  n_strx;   /* index into the string table */
-    } n_un;
-    uint8_t n_type;         /* type flag, see below */
-    uint8_t n_sect;         /* section number or NO_SECT */
-    uint16_t n_desc;        /* see <mach-o/stab.h> */
-    uint64_t n_value;       /* value of this symbol (or stab offset) */
-};
 
 kern_return_t PacketPID_start(kmod_info_t * ki, void *d);
 kern_return_t PacketPID_stop(kmod_info_t *ki, void *d);
