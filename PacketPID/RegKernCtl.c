@@ -8,8 +8,9 @@
 #include <sys/systm.h>
 #include <sys/kern_control.h>
 #include "RegKernCtl.h"
+#include "KernFunc.h"
 
-static const char ctl_name[] = "org.baidu.PacketPID";
+static const char ctl_name[] = KEXT_CTL_NAME;
 
 static errno_t
 kern_ctl_connect_func(kern_ctl_ref kctlref,
