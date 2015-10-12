@@ -186,10 +186,10 @@ kern_ctl_getopt_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo,
     u_short fport, lport;
     int wildcard = 0;
 
-    faddr.s_addr = data_ptr->saddr;
-    laddr.s_addr = data_ptr->daddr;
-    fport = data_ptr->source;
-    lport = data_ptr->dest;
+    faddr.s_addr = data_ptr->sock_info.saddr;
+    laddr.s_addr = data_ptr->sock_info.daddr;
+    fport = data_ptr->sock_info.source;
+    lport = data_ptr->sock_info.dest;
     
     // set pcbinfo pointer and match type by protocol type
     if (data_ptr->proto == IPPROTO_TCP) {
