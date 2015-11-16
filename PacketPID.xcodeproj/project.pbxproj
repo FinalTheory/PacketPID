@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E16ECD961BC5205D0074E05F /* KernFunc.c in Sources */ = {isa = PBXBuildFile; fileRef = E16ECD941BC5205D0074E05F /* KernFunc.c */; settings = {ASSET_TAGS = (); }; };
-		E16ECD971BC5205D0074E05F /* KernFunc.h in Headers */ = {isa = PBXBuildFile; fileRef = E16ECD951BC5205D0074E05F /* KernFunc.h */; settings = {ASSET_TAGS = (); }; };
+		E16ECD961BC5205D0074E05F /* KernFunc.c in Sources */ = {isa = PBXBuildFile; fileRef = E16ECD941BC5205D0074E05F /* KernFunc.c */; };
+		E16ECD971BC5205D0074E05F /* KernFunc.h in Headers */ = {isa = PBXBuildFile; fileRef = E16ECD951BC5205D0074E05F /* KernFunc.h */; };
 		E1B35BF01BBBAE3F00B025F9 /* PacketPID.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BEF1BBBAE3F00B025F9 /* PacketPID.c */; };
-		E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */; settings = {ASSET_TAGS = (); }; };
-		E1F66E171BBFADF400C89606 /* RegKernCtl.c in Sources */ = {isa = PBXBuildFile; fileRef = E1F66E151BBFADF400C89606 /* RegKernCtl.c */; settings = {ASSET_TAGS = (); }; };
-		E1F66E181BBFADF400C89606 /* RegKernCtl.h in Headers */ = {isa = PBXBuildFile; fileRef = E1F66E161BBFADF400C89606 /* RegKernCtl.h */; settings = {ASSET_TAGS = (); }; };
+		E1B35BF81BBBB0DD00B025F9 /* KernelResolver.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B35BF71BBBB0DD00B025F9 /* KernelResolver.c */; };
+		E1F66E171BBFADF400C89606 /* RegKernCtl.c in Sources */ = {isa = PBXBuildFile; fileRef = E1F66E151BBFADF400C89606 /* RegKernCtl.c */; };
+		E1F66E181BBFADF400C89606 /* RegKernCtl.h in Headers */ = {isa = PBXBuildFile; fileRef = E1F66E161BBFADF400C89606 /* RegKernCtl.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -248,12 +248,12 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = PacketPID/Info.plist;
-				MODULE_NAME = baidu.PacketPID;
+				MODULE_NAME = org.baidu.PacketPID;
 				MODULE_START = PacketPID_start;
 				MODULE_STOP = PacketPID_stop;
 				MODULE_VERSION = 1.0.0d1;
 				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = baidu.PacketPID;
+				PRODUCT_BUNDLE_IDENTIFIER = org.baidu.PacketPID;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SDKROOT = macosx;
@@ -269,12 +269,12 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = PacketPID/Info.plist;
-				MODULE_NAME = baidu.PacketPID;
+				MODULE_NAME = org.baidu.PacketPID;
 				MODULE_START = PacketPID_start;
 				MODULE_STOP = PacketPID_stop;
 				MODULE_VERSION = 1.0.0d1;
 				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = baidu.PacketPID;
+				PRODUCT_BUNDLE_IDENTIFIER = org.baidu.PacketPID;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SDKROOT = macosx;
