@@ -43,6 +43,10 @@ void (*lck_rw_lock_shared_p)(lck_rw_t *lck);
 
 lck_rw_type_t (*lck_rw_done_p)(lck_rw_t *lck);
 
+int (*in_pcb_checkstate_p)(struct inpcb *pcb, int mode, int locked);
+
+boolean_t (*inp_restricted_recv_p)(struct inpcb *inp, struct ifnet *ifp);
+
 static char *sym_names[] = {
         "_tcbinfo",
         "_udbinfo",
@@ -54,6 +58,8 @@ static char *sym_names[] = {
         "_ifnet_flowid",
         "_lck_rw_lock_shared",
         "_lck_rw_done",
+        "_in_pcb_checkstate",
+        "_inp_restricted_recv",
         NULL,
 };
 
@@ -70,6 +76,8 @@ static void **sym_addrs[sym_num] = {
         (void **)&ifnet_flowid_p,
         (void **)&lck_rw_lock_shared_p,
         (void **)&lck_rw_done_p,
+        (void **)&in_pcb_checkstate_p,
+        (void **)&inp_restricted_recv_p,
 };
 
 int InitFunctions() {
@@ -142,6 +150,128 @@ int LoadInterfaces() {
 
     DLOG("[INFO] Network interfaces count: %u\n", count);
     return 0;
+}
+
+/*
+ * Lookup PCB in hash list.
+ */
+struct inpcb *
+in_pcblookup_hash(struct inpcbinfo *pcbinfo, struct in_addr faddr,
+                  u_int fport_arg, struct in_addr laddr, u_int lport_arg, int wildcard,
+                  struct ifnet *ifp)
+{
+    struct inpcbhead *head;
+    struct inpcb *inp;
+    u_short fport = fport_arg, lport = lport_arg;
+    struct inpcb *local_wild = NULL;
+#if INET6
+    struct inpcb *local_wild_mapped = NULL;
+#endif /* INET6 */
+    
+    /*
+     * We may have found the pcb in the last lookup - check this first.
+     */
+    
+    lck_rw_lock_shared(pcbinfo->ipi_lock);
+    
+    /*
+     * First look for an exact match.
+     */
+    head = &pcbinfo->ipi_hashbase[INP_PCBHASH(faddr.s_addr, lport, fport,
+                                              pcbinfo->ipi_hashmask)];
+    LIST_FOREACH(inp, head, inp_hash) {
+#if INET6
+        if (!(inp->inp_vflag & INP_IPV4))
+            continue;
+#endif /* INET6 */
+        if (inp_restricted_recv_p(inp, ifp))
+            continue;
+        
+        if (inp->inp_faddr.s_addr == faddr.s_addr &&
+            inp->inp_laddr.s_addr == laddr.s_addr &&
+            inp->inp_fport == fport &&
+            inp->inp_lport == lport) {
+            /*
+             * Found.
+             */
+            if (in_pcb_checkstate_p(inp, WNT_ACQUIRE, 0) !=
+                WNT_STOPUSING) {
+                lck_rw_done_p(pcbinfo->ipi_lock);
+                return (inp);
+            } else {
+                /* it's there but dead, say it isn't found */
+                lck_rw_done_p(pcbinfo->ipi_lock);
+                return (NULL);
+            }
+        }
+    }
+    
+    if (!wildcard) {
+        /*
+         * Not found.
+         */
+        lck_rw_done_p(pcbinfo->ipi_lock);
+        return (NULL);
+    }
+    
+    head = &pcbinfo->ipi_hashbase[INP_PCBHASH(INADDR_ANY, lport, 0,
+                                              pcbinfo->ipi_hashmask)];
+    LIST_FOREACH(inp, head, inp_hash) {
+#if INET6
+        if (!(inp->inp_vflag & INP_IPV4))
+            continue;
+#endif /* INET6 */
+        if (inp_restricted_recv_p(inp, ifp))
+            continue;
+        
+        if (inp->inp_faddr.s_addr == INADDR_ANY &&
+            inp->inp_lport == lport) {
+            if (inp->inp_laddr.s_addr == laddr.s_addr) {
+                if (in_pcb_checkstate_p(inp, WNT_ACQUIRE, 0) !=
+                    WNT_STOPUSING) {
+                    lck_rw_done_p(pcbinfo->ipi_lock);
+                    return (inp);
+                } else {
+                    /* it's dead; say it isn't found */
+                    lck_rw_done_p(pcbinfo->ipi_lock);
+                    return (NULL);
+                }
+            } else if (inp->inp_laddr.s_addr == INADDR_ANY) {
+#if INET6
+                if (SOCK_CHECK_DOM(inp->inp_socket, PF_INET6))
+                    local_wild_mapped = inp;
+                else
+#endif /* INET6 */
+                    local_wild = inp;
+            }
+        }
+    }
+    if (local_wild == NULL) {
+#if INET6
+        if (local_wild_mapped != NULL) {
+            if (in_pcb_checkstate_p(local_wild_mapped,
+                                  WNT_ACQUIRE, 0) != WNT_STOPUSING) {
+                lck_rw_done_p(pcbinfo->ipi_lock);
+                return (local_wild_mapped);
+            } else {
+                /* it's dead; say it isn't found */
+                lck_rw_done_p(pcbinfo->ipi_lock);
+                return (NULL);
+            }
+        }
+#endif /* INET6 */
+        lck_rw_done_p(pcbinfo->ipi_lock);
+        return (NULL);
+    }
+    if (in_pcb_checkstate_p(local_wild, WNT_ACQUIRE, 0) != WNT_STOPUSING) {
+        lck_rw_done_p(pcbinfo->ipi_lock);
+        return (local_wild);
+    }
+    /*
+     * It's either not found or is already dead.
+     */
+    lck_rw_done_p(pcbinfo->ipi_lock);
+    return (NULL);
 }
 
 int
@@ -231,6 +361,14 @@ kern_ctl_getopt_func(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo,
                     found = 1;
                     inp_get_soprocinfo_p(inp, &data_ptr->proc);
                 }
+                /*
+                    in function in_pcblookup_hash(),
+                    they increased a reference count of this in_pcb block,
+                    if you didn't release it, this is just like a memory leak,
+                    and when there is no enough memory in buffer,
+                    the entire TCP connection is reseted by RST packet.
+                 */
+                in_pcb_checkstate_p(inp, WNT_RELEASE, 0);
             }
         }
     } else {
